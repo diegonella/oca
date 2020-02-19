@@ -1,0 +1,21 @@
+{
+    "name": "diegonella/oca-envios",
+    "description": "Port para utilizar los metodos de tarifar con OCA",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Diego Gonella",
+            "email": "diegonella@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable" : true,
+    "require": {},
+    "extra": {
+        "laravel": {
+            "providers": [
+                "diegonella\\oca-envios\\OcaEnviosServiceProvider"
+            ]
+        }
+    }
+} 
