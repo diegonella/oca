@@ -4,17 +4,15 @@ namespace diegonella\OcaEnvios;
 
 class Oca
 {
-    public static function hi(){
-        echo "Hello world";
-    }
+    
 
-    const VERSION				= '0.1.1';
-	protected $webservice_url	= 'webservice.oca.com.ar';
-	const CURL_DEFAULT_TIMEOUT = 360;
+    const VERSION				    = '1';
+	protected $webservice_url	    = 'webservice.oca.com.ar';
+	const CURL_DEFAULT_TIMEOUT      = 360;
 
-	const FRANJA_HORARIA_8_17HS = 1;
-	const FRANJA_HORARIA_8_12HS = 2;
-	const FRANJA_HORARIA_14_17HS = 3;
+	const FRANJA_HORARIA_8_17HS     = 1;
+	const FRANJA_HORARIA_8_12HS     = 2;
+	const FRANJA_HORARIA_14_17HS    = 3;
 
 	private $Cuit;
 	private $Operativa;
@@ -23,22 +21,27 @@ class Oca
 
 	// ========================================================================
 
+    /**
+	 * Tarifar un Envío Corporativo
+	 * OCA_OPERATIVA_A_SUCURSAL: 287474
+     * OCA_OPERATIVA_A_DOMICILIO: 287463
+	 * @param string $cuit: CUIT del cliente [con guiones]
+	 * @param integer $operativa nro de operativa
+	 */
 	public function __construct($cuit = '', $operativa = '')
 	{
 		$this->Cuit 		= trim($cuit);
 		$this->Operativa 	= trim($operativa);
 
-		$this->setCurlOptArr(array(	
+		$this->setCurlOptArr( [	
 									CURLOPT_RETURNTRANSFER	=> TRUE,
 									CURLOPT_HEADER			=> FALSE,
 									CURLOPT_USERAGENT		=> $this->setUserAgent(),
 									CURLOPT_CONNECTTIMEOUT	=> 5,
 									CURLOPT_TIMEOUT			=> Self::CURL_DEFAULT_TIMEOUT,
-									// CURLOPT_POST			=> TRUE,
-									// CURLOPT_POSTFIELDS		=> http_build_query($_query_string),
-									// CURLOPT_URL				=> "{$this->webservice_url}/epak_tracking/Oep_TrackEPak.asmx/Tarifar_Envio_Corporativo",
 									CURLOPT_FOLLOWLOCATION	=> TRUE
-									));
+                                ]
+                            );
 	}
 
 	/**
@@ -96,24 +99,26 @@ class Oca
 	/**
 	 * Tarifar un Envío Corporativo
 	 *
-	 * @param string $PesoTotal
-	 * @param string $VolumenTotal
-	 * @param string $CodigoPostalOrigen
-	 * @param string $CodigoPostalDestino
-	 * @param string $CantidadPaquetes
-	 * @param string $ValorDeclarado
+	 * @param integer $PesoTotal en KG
+	 * @param integer $VolumenTotal en M3
+	 * @param integer $CodigoPostalOrigen
+	 * @param integer $CodigoPostalDestino
+	 * @param integer $CantidadPaquetes 
+	 * @param integer $ValorDeclarado
 	 * @return array $e_corp conteniendo el tipo de tarifador y el precio del envío.
 	 */
 	public function tarifarEnvioCorporativo($PesoTotal, $VolumenTotal, $CodigoPostalOrigen, $CodigoPostalDestino, $CantidadPaquetes, $ValorDeclarado)
 	{
-		$_query_string = array(	'PesoTotal'				=> $PesoTotal,
-								'VolumenTotal'			=> $VolumenTotal,
-								'CodigoPostalOrigen'	=> $CodigoPostalOrigen,
-								'CodigoPostalDestino'	=> $CodigoPostalDestino,
-								'CantidadPaquetes'		=> $CantidadPaquetes,
-								'ValorDeclarado'		=> $ValorDeclarado,
-								'Cuit'					=> $this->Cuit,
-								'Operativa'				=> $this->Operativa);
+		$_query_string = [	
+                            'PesoTotal'				=> $PesoTotal,
+							'VolumenTotal'			=> $VolumenTotal,
+							'CodigoPostalOrigen'	=> $CodigoPostalOrigen,
+							'CodigoPostalDestino'	=> $CodigoPostalDestino,
+							'CantidadPaquetes'		=> $CantidadPaquetes,
+							'ValorDeclarado'		=> $ValorDeclarado,
+							'Cuit'					=> $this->Cuit,
+                            'Operativa'				=> $this->Operativa
+                            ];
 
 		$ch = curl_init();
 		
@@ -124,20 +129,25 @@ class Oca
 
 		curl_setopt_array($ch, $curl_opt_arr);
 
-		$dom = new \DOMDocument();
-		@$dom->loadXML(curl_exec($ch));
+        $dom = new \DOMDocument();
+        $result = curl_exec($ch);
+        
+        file_put_contents("rqt_oca.xml", print_r($_query_string,true));
+        file_put_contents("rta_oca.xml", $result);
+
+		@$dom->loadXML($result);
 		$xpath = new \DOMXpath($dom);
 
-		$e_corp = array();
+		$e_corp = [];
 		foreach (@$xpath->query("//NewDataSet/Table") as $envio_corporativo)
 		{
-			$e_corp[] = array(	'Tarifador'		=> $envio_corporativo->getElementsByTagName('Tarifador')->item(0)->nodeValue,
-								'Precio'		=> $envio_corporativo->getElementsByTagName('Precio')->item(0)->nodeValue,
-								'Ambito'		=> $envio_corporativo->getElementsByTagName('Ambito')->item(0)->nodeValue,
-								'PlazoEntrega'	=> $envio_corporativo->getElementsByTagName('PlazoEntrega')->item(0)->nodeValue,
-								'Adicional'		=> $envio_corporativo->getElementsByTagName('Adicional')->item(0)->nodeValue,
-								'Total'			=> $envio_corporativo->getElementsByTagName('Total')->item(0)->nodeValue,
-							);
+			$e_corp[] = [	'Tarifador'		=> $envio_corporativo->getElementsByTagName('Tarifador')->item(0)->nodeValue,
+							'Precio'		=> $envio_corporativo->getElementsByTagName('Precio')->item(0)->nodeValue,
+							'Ambito'		=> $envio_corporativo->getElementsByTagName('Ambito')->item(0)->nodeValue,
+							'PlazoEntrega'	=> $envio_corporativo->getElementsByTagName('PlazoEntrega')->item(0)->nodeValue,
+							'Adicional'		=> $envio_corporativo->getElementsByTagName('Adicional')->item(0)->nodeValue,
+							'Total'			=> $envio_corporativo->getElementsByTagName('Total')->item(0)->nodeValue,
+                        ];
 		}
 		
 		return $e_corp;
@@ -154,10 +164,10 @@ class Oca
 	 */
 	public function listEnvios($fechaDesde, $fechaHasta)
 	{
-		$_query_string = array(	'FechaDesde'			=> $fechaDesde,
+		$_query_string = [	    'FechaDesde'			=> $fechaDesde,
 								'FechaHasta'			=> $fechaHasta,
 								'Cuit'					=> $this->Cuit,
-							);
+                        ];
 
 		$ch = curl_init();
 
@@ -172,12 +182,12 @@ class Oca
 		@$dom->loadXML(curl_exec($ch));
 		$xpath = new \DOMXpath($dom);	
 		
-		$envios = array();
+		$envios = [];
 		foreach (@$xpath->query("//NewDataSet/Table") as $envio_corporativo)
 		{
-			$envios[] = array(	'NroProducto'		=> $envio_corporativo->getElementsByTagName('NroProducto')->item(0)->nodeValue,
-								'NumeroEnvio'		=> $envio_corporativo->getElementsByTagName('NumeroEnvio')->item(0)->nodeValue,
-							);
+			$envios[] = [	'NroProducto'		=> $envio_corporativo->getElementsByTagName('NroProducto')->item(0)->nodeValue,
+							'NumeroEnvio'		=> $envio_corporativo->getElementsByTagName('NumeroEnvio')->item(0)->nodeValue,
+                        ];
 		}
 		
 		return $envios;
@@ -196,10 +206,10 @@ class Oca
 	 */
 	public function trackingPieza($pieza = '', $nroDocumentoCliente = '')
 	{
-		$_query_string = array(	'Pieza'					=> $pieza,
-								'NroDocumentoCliente'	=> $nroDocumentoCliente,
-								'Cuit'					=> $this->Cuit,
-							);
+		$_query_string = [	'Pieza'					=> $pieza,
+							'NroDocumentoCliente'	=> $nroDocumentoCliente,
+							'Cuit'					=> $this->Cuit,
+                        ];
 
 		$ch = curl_init();
 		
@@ -213,16 +223,16 @@ class Oca
 		$dom = new \DOMDocument();
 		@$dom->loadXML(curl_exec($ch));
 		$xpath = new \DOMXpath($dom);	
-		$envio = array();
+		$envio = [];
 		foreach (@$xpath->query("//NewDataSet/Table") as $tp)
 		{
 			
-			$envio[] = array("NumeroEnvio"=>$tp->getElementsByTagName('NumeroEnvio')->item(0)->nodeValue,
-								"Descripcion_Motivo"=>$tp->getElementsByTagName('Descripcion_Motivo')->item(0)->nodeValue,
-								"Desdcripcion_Estado"=>$tp->getElementsByTagName('Desdcripcion_Estado')->item(0)->nodeValue,
-								"SUC"=>$tp->getElementsByTagName('SUC')->item(0)->nodeValue,
-								"fecha"=>$tp->getElementsByTagName('fecha')->item(0)->nodeValue,
-							);
+			$envio[] = [    "NumeroEnvio"=>$tp->getElementsByTagName('NumeroEnvio')->item(0)->nodeValue,
+							"Descripcion_Motivo"=>$tp->getElementsByTagName('Descripcion_Motivo')->item(0)->nodeValue,
+							"Desdcripcion_Estado"=>$tp->getElementsByTagName('Desdcripcion_Estado')->item(0)->nodeValue,
+							"SUC"=>$tp->getElementsByTagName('SUC')->item(0)->nodeValue,
+							"fecha"=>$tp->getElementsByTagName('fecha')->item(0)->nodeValue,
+                        ];
 		}
 		
 		return $envio;
@@ -241,9 +251,9 @@ class Oca
 	{
 		if ( ! $CP) return;
 		
-		$_query_string = array(	
+		$_query_string = [
 							'CodigoPostal'					=> (int)$CP,
-							);
+                        ];
 
 		$ch = curl_init();
 		
@@ -258,10 +268,10 @@ class Oca
 		@$dom->loadXML(curl_exec($ch));
 		$xpath = new \DOMXpath($dom);
 	
-		$c_imp = array();
+		$c_imp = [];
 		foreach (@$xpath->query("//NewDataSet/Table") as $ci)
 		{
-			$c_imp[] = array(	'idCentroImposicion'	=> $ci->getElementsByTagName('idCentroImposicion')->item(0)->nodeValue,
+			$c_imp[] = [	    'idCentroImposicion'	=> $ci->getElementsByTagName('idCentroImposicion')->item(0)->nodeValue,
 								'IdSucursalOCA'			=> $ci->getElementsByTagName('IdSucursalOCA')->item(0)->nodeValue,
 								'Sigla'					=> $ci->getElementsByTagName('Sigla')->item(0)->nodeValue,
 								'Descripcion'			=> $ci->getElementsByTagName('Descripcion')->item(0)->nodeValue,
@@ -277,7 +287,7 @@ class Oca
 								'eMail'					=> $ci->getElementsByTagName('eMail')->item(0)->nodeValue,
 								'Provincia'				=> $ci->getElementsByTagName('Provincia')->item(0)->nodeValue,
 								'CodigoPostal'			=> $ci->getElementsByTagName('CodigoPostal')->item(0)->nodeValue
-							);
+                        ];
 		}
 		
 		return $c_imp;
@@ -303,17 +313,17 @@ class Oca
 		@$dom->loadXML(curl_exec($ch));
 		$xpath = new \DOMXpath($dom);
 	
-		$c_imp = array();
+		$c_imp = [];
 		foreach (@$xpath->query("//NewDataSet/Table") as $ci)
 		{
-			$c_imp[] = array(	'idCentroImposicion'	=> $ci->getElementsByTagName('idCentroImposicion')->item(0)->nodeValue,
+			$c_imp[] = [	    'idCentroImposicion'	=> $ci->getElementsByTagName('idCentroImposicion')->item(0)->nodeValue,
 								'Sigla'					=> $ci->getElementsByTagName('Sigla')->item(0)->nodeValue,
 								'Descripcion'			=> $ci->getElementsByTagName('Descripcion')->item(0)->nodeValue,
 								'Calle'					=> $ci->getElementsByTagName('Calle')->item(0)->nodeValue,
 								'Numero'				=> $ci->getElementsByTagName('Numero')->item(0)->nodeValue,
 								'Piso'					=> $ci->getElementsByTagName('Piso')->item(0)->nodeValue,
 								'Localidad'				=> $ci->getElementsByTagName('Localidad')->item(0)->nodeValue,
-							);
+                        ];
 		}
 		
 		return $c_imp;
@@ -339,12 +349,12 @@ class Oca
 		$dom->loadXml(curl_exec($ch));
 		$xpath = new \DOMXPath($dom);
 		
-		$provincias = array();
+		$provincias = [];
 		foreach (@$xpath->query("//Provincias/Provincia") as $provincia)
 		{
-			$provincias[] = array( 	'id' 		=> $provincia->getElementsByTagName('IdProvincia')->item(0)->nodeValue,
-									'provincia' => $provincia->getElementsByTagName('Descripcion')->item(0)->nodeValue, 
-								);
+			$provincias[] = [ 	'id' 		=> $provincia->getElementsByTagName('IdProvincia')->item(0)->nodeValue,
+								'provincia' => $provincia->getElementsByTagName('Descripcion')->item(0)->nodeValue, 
+                            ];
 		}
 		
 		return $provincias;
@@ -360,12 +370,11 @@ class Oca
 	 */
 	public function getLocalidadesByProvincia($idProvincia)
 	{
-		$_query_string = array('idProvincia' => $idProvincia);
+		$_query_string = ['idProvincia' => $idProvincia];
 		
 		$ch = curl_init();
 
 		$curl_opt_arr = $this->getCurlOptsArr();
-		// $curl_opt_arr[CURLOPT_POST] 		= true;
 		$curl_opt_arr[CURLOPT_POSTFIELDS] 	= http_build_query($_query_string);
 		$curl_opt_arr[CURLOPT_URL] 			= "{$this->webservice_url}/oep_tracking/Oep_Track.asmx/GetLocalidadesByProvincia";
 
@@ -375,10 +384,10 @@ class Oca
 		$dom->loadXml(curl_exec($ch));
 		$xpath = new \DOMXPath($dom);
 		
-		$localidades = array();
+		$localidades = [];
 		foreach (@$xpath->query("//Localidades/Provincia") as $provincia)
 		{
-			$localidades[] = array('localidad' => $provincia->getElementsByTagName('Nombre')->item(0)->nodeValue );
+			$localidades[] = ['localidad' => $provincia->getElementsByTagName('Nombre')->item(0)->nodeValue];
 		}
 
 		return $localidades;
@@ -399,19 +408,18 @@ class Oca
 	 */
 	public function ingresoOR($usuarioEPack, $passwordEPack, $xmlRetiro, $confirmarRetiro = false, $diasRetiro = 1, $franjaHoraria = Oca::FRANJA_HORARIA_8_17HS)
 	{
-		$_query_string = array(
+		$_query_string = [
 			'usr' => $usuarioEPack,
 			'psw' => $passwordEPack,
 			'XML_Retiro' => $xmlRetiro,
 			'ConfirmarRetiro' => $confirmarRetiro ? 'true' : 'false',
 			'DiasRetiro' => $diasRetiro,
 			'FranjaHoraria' => $franjaHoraria
-			);
+        ];
 
 		$ch = curl_init();
 
 		$curl_opt_arr = $this->getCurlOptsArr();
-		// $curl_opt_arr[CURLOPT_POST] 		= true;
 		$curl_opt_arr[CURLOPT_POSTFIELDS] 	= http_build_query($_query_string);
 		$curl_opt_arr[CURLOPT_URL] 			= "{$this->webservice_url}/oep_tracking/Oep_Track.asmx/IngresoOR";
 
@@ -427,30 +435,30 @@ class Oca
 		$xml_detalle_ingresos = @$xpath->query("//Resultado/DetalleIngresos ");
 		$xml_resumen = @$xpath->query("//Resultado/Resumen ")->item(0);
 
-		$detalle_ingresos = array();
+		$detalle_ingresos = [];
 
 		foreach($xml_detalle_ingresos as $item)
 		{
-			$detalle_ingresos[] = array(
+			$detalle_ingresos[] = [
 				'Operativa' => $item->getElementsByTagName('Operativa')->item(0)->nodeValue,
 				'OrdenRetiro' => $item->getElementsByTagName('OrdenRetiro')->item(0)->nodeValue,
 				'NumeroEnvio' => $item->getElementsByTagName('NumeroEnvio')->item(0)->nodeValue,
 				'Remito' => $item->getElementsByTagName('Remito')->item(0)->nodeValue,
 				'Estado' => $item->getElementsByTagName('Estado')->item(0)->nodeValue,
 				'sucursalDestino' => $item->getElementsByTagName('sucursalDestino')->item(0)->nodeValue
-				 );
+                ];
 		}
 
-		$resumen = array(
+		$resumen = [
 				'CodigoOperacion' => $xml_resumen->getElementsByTagName('CodigoOperacion')->item(0)->nodeValue,
 				'FechaIngreso' => $xml_resumen->getElementsByTagName('FechaIngreso')->item(0)->nodeValue,
 				'MailUsuario' => $xml_resumen->getElementsByTagName('mailUsuario')->item(0)->nodeValue,
 				'CantidadRegistros' => $xml_resumen->getElementsByTagName('CantidadRegistros')->item(0)->nodeValue,
 				'CantidadIngresados' => $xml_resumen->getElementsByTagName('CantidadIngresados')->item(0)->nodeValue,
 				'CantidadRechazados' => $xml_resumen->getElementsByTagName('CantidadRechazados')->item(0)->nodeValue
-				 );
+                ];
 
-		$resultado = array('detalleIngresos' => $detalle_ingresos, 'resumen' => $resumen);
+		$resultado = ['detalleIngresos' => $detalle_ingresos, 'resumen' => $resumen];
 
 		return $resultado;
 	}
@@ -470,19 +478,18 @@ class Oca
 	 */
 	public function ingresoORMultiplesRetiros($usuarioEPack, $passwordEPack, $xmlDatos, $confirmarRetiro = false)
 	{
-		$_query_string = array(
-			'usr' => $usuarioEPack,
-			'psw' => $passwordEPack,
-			'xml_Datos' => $xmlDatos,
-			'ConfirmarRetiro' => $confirmarRetiro ? 'true' : 'false',
-			'ArchivoCliente' => '',
-			'ArchivoProceso' => ''
-			);
+		$_query_string = [
+                'usr' => $usuarioEPack,
+                'psw' => $passwordEPack,
+                'xml_Datos' => $xmlDatos,
+                'ConfirmarRetiro' => $confirmarRetiro ? 'true' : 'false',
+                'ArchivoCliente' => '',
+                'ArchivoProceso' => ''
+            ];
 
 		$ch = curl_init();
 
 		$curl_opt_arr = $this->getCurlOptsArr();
-		// $curl_opt_arr[CURLOPT_POST] 		= true;
 		$curl_opt_arr[CURLOPT_POSTFIELDS] 	= http_build_query($_query_string);
 		$curl_opt_arr[CURLOPT_URL] 			= "{$this->webservice_url}/epak_tracking/Oep_TrackEPak.asmx/IngresoORMultiplesRetiros";
 
@@ -498,31 +505,31 @@ class Oca
 		$xml_detalle_ingresos = @$xpath->query("//Resultado/DetalleIngresos ");
 		$xml_resumen = @$xpath->query("//Resultado/Resumen ")->item(0);
 
-		$detalle_ingresos = array();
+		$detalle_ingresos = [];
 
 		foreach($xml_detalle_ingresos as $item)
 		{
-			$detalle_ingresos[] = array(
+			$detalle_ingresos[] = [
 				'Operativa' => $item->getElementsByTagName('Operativa')->item(0)->nodeValue,
 				'OrdenRetiro' => $item->getElementsByTagName('OrdenRetiro')->item(0)->nodeValue,
 				'NumeroEnvio' => $item->getElementsByTagName('NumeroEnvio')->item(0)->nodeValue,
 				'Remito' => $item->getElementsByTagName('Remito')->item(0)->nodeValue,
 				'Estado' => $item->getElementsByTagName('Estado')->item(0)->nodeValue,
 				'sucursalDestino' => $item->getElementsByTagName('sucursalDestino')->item(0)->nodeValue
-				 );
+                ];
 		}
 
 
-		$resumen = array(
+		$resumen = [
 				'CodigoOperacion' => $xml_resumen->getElementsByTagName('CodigoOperacion')->item(0)->nodeValue,
 				'FechaIngreso' => $xml_resumen->getElementsByTagName('FechaIngreso')->item(0)->nodeValue,
 				'MailUsuario' => $xml_resumen->getElementsByTagName('mailUsuario')->item(0)->nodeValue,
 				'CantidadRegistros' => $xml_resumen->getElementsByTagName('CantidadRegistros')->item(0)->nodeValue,
 				'CantidadIngresados' => $xml_resumen->getElementsByTagName('CantidadIngresados')->item(0)->nodeValue,
 				'CantidadRechazados' => $xml_resumen->getElementsByTagName('CantidadRechazados')->item(0)->nodeValue
-				 );
+                ];
 
-		$resultado = array('detalleIngresos' => $detalle_ingresos, 'resumen' => $resumen);
+		$resultado = ['detalleIngresos' => $detalle_ingresos, 'resumen' => $resumen];
 
 		return $resultado;
 	}
@@ -541,15 +548,14 @@ class Oca
 	 */
 	public function getCentroCostoPorOperativa($cuit, $operativa)
 	{
-		$_query_string = array(
-			'CUIT' => $cuit,
-			'Operativa' => $operativa
-			);
+		$_query_string = [
+			    'CUIT' => $cuit,
+			    'Operativa' => $operativa
+            ];
 
 		$ch = curl_init();
 
 		$curl_opt_arr = $this->getCurlOptsArr();
-		// $curl_opt_arr[CURLOPT_POST] 		= true;
 		$curl_opt_arr[CURLOPT_POSTFIELDS] 	= http_build_query($_query_string);
 		$curl_opt_arr[CURLOPT_URL] 			= "{$this->webservice_url}/oep_tracking/Oep_Track.asmx/GetCentroCostoPorOperativa";
 
@@ -559,10 +565,10 @@ class Oca
 		@$dom->loadXml(curl_exec($ch));
 		$xpath = new \DOMXPath($dom);
 
-		$centros = array();
+		$centros = [];
 		foreach (@$xpath->query("//NewDataSet/Table") as $centro)
 		{
-			$centros[] = array(
+			$centros[] = [
 				'NroCentroCosto' => $centro->getElementsByTagName('NroCentroCosto')->item(0)->nodeValue,
 				'Solicitante' => $centro->getElementsByTagName('Solicitante')->item(0)->nodeValue,
 				'CalleRetiro' => $centro->getElementsByTagName('CalleRetiro')->item(0)->nodeValue,
@@ -574,7 +580,7 @@ class Oca
 				'TelContactoRetiro' => $centro->getElementsByTagName('TelContactoRetiro')->item(0)->nodeValue,
 				'EmaiContactolRetiro' => $centro->getElementsByTagName('EmaiContactolRetiro')->item(0)->nodeValue,
 				'ContactoRetiro' => $centro->getElementsByTagName('ContactoRetiro')->item(0)->nodeValue
-				);
+            ];
 		}
 
 		return $centros;
@@ -593,16 +599,15 @@ class Oca
 	 */
 	public function anularOrdenGenerada($user, $pass, $IdOrdenRetiro)
 	{
-		$_query_string = array(
+		$_query_string = [
 			'Usr' => $user,
 			'Psw' => $pass,
 			'IdOrdenRetiro' => $IdOrdenRetiro
-			);
+            ];
 
 		$ch = curl_init();
 
 		$curl_opt_arr = $this->getCurlOptsArr();
-		// $curl_opt_arr[CURLOPT_POST] 		= true;
 		$curl_opt_arr[CURLOPT_POSTFIELDS] 	= http_build_query($_query_string);
 		$curl_opt_arr[CURLOPT_URL] 			= "{$this->webservice_url}/epak_tracking/Oep_TrackEPak.asmx/AnularOrdenGenerada";
 
@@ -615,13 +620,13 @@ class Oca
 		@$dom->loadXml($xml);
 		$xpath = new \DOMXPath($dom);
 
-		$centros = array();
+		$centros = [];
 		foreach (@$xpath->query("//NewDataSet/Table") as $centro)
 		{
-			$centros[] = array(
+			$centros[] = [
 				'IdResult' => $centro->getElementsByTagName('IdResult')->item(0)->nodeValue,
 				'Mensaje' => $centro->getElementsByTagName('Mensaje')->item(0)->nodeValue
-				);
+            ];
 		}
 
 		return $centros;
@@ -640,16 +645,15 @@ class Oca
 	 */
 	public function list_Envios($cuit, $fechaDesde = '01-01-2015', $fechaHasta = '01-01-2050')
 	{
-		$_query_string = array(
+		$_query_string = [
 			'cuit' => $cuit,
 			'FechaDesde' => $fechaDesde,
 			'FechaHasta' => $fechaHasta
-			);
+            ];
 
 		$ch = curl_init();
 
 		$curl_opt_arr = $this->getCurlOptsArr();
-		// $curl_opt_arr[CURLOPT_POST] 		= true;
 		$curl_opt_arr[CURLOPT_POSTFIELDS] 	= http_build_query($_query_string);
 		$curl_opt_arr[CURLOPT_URL] 			= "{$this->webservice_url}/epak_tracking/Oep_TrackEPak.asmx/List_Envios";
 
@@ -659,13 +663,13 @@ class Oca
 		@$dom->loadXml(curl_exec($ch));
 		$xpath = new \DOMXPath($dom);
 
-		$envios = array();
+		$envios = [];
 		foreach (@$xpath->query("//NewDataSet/Table") as $envio)
 		{
-			$envios[] = array(
+			$envios[] = [
 				'NroProducto' => $envio->getElementsByTagName('NroProducto')->item(0)->nodeValue,
 				'NumeroEnvio' => $envio->getElementsByTagName('NumeroEnvio')->item(0)->nodeValue
-				);
+                ];
 		}
 
 		return $envios;
@@ -684,15 +688,14 @@ class Oca
 	 */
 	public function getHtmlDeEtiquetasPorOrdenOrNumeroEnvio($IdOrdenRetiro, $NroEnvio = '')
 	{
-		$_query_string = array(
-			'IdOrdenRetiro' => $IdOrdenRetiro,
-			'NroEnvio' => $NroEnvio
-			);
+		$_query_string = [
+			    'IdOrdenRetiro' => $IdOrdenRetiro,
+			    'NroEnvio' => $NroEnvio
+			];
 
 		$ch = curl_init();
 		
 		$curl_opt_arr = $this->getCurlOptsArr();
-		// $curl_opt_arr[CURLOPT_POST] 		= true;
 		$curl_opt_arr[CURLOPT_POSTFIELDS] 	= http_build_query($_query_string);
 		$curl_opt_arr[CURLOPT_URL] 			= "{$this->webservice_url}/oep_tracking/Oep_Track.asmx/GetHtmlDeEtiquetasPorOrdenOrNumeroEnvio";
 
@@ -714,16 +717,15 @@ class Oca
 	 */
 	public function getPDFDeEtiquetasPorOrdenOrNumeroEnvio($IdOrdenRetiro, $NroEnvio = '', $LogisticaInversa = false)
 	{
-		$_query_string = array(
-			'IdOrdenRetiro' => $IdOrdenRetiro,
-			'NroEnvio' => $NroEnvio,
-			'LogisticaInversa' => $LogisticaInversa ? 'true' : 'false'
-			);
+		$_query_string = [
+			    'IdOrdenRetiro' => $IdOrdenRetiro,
+			    'NroEnvio' => $NroEnvio,
+			    'LogisticaInversa' => $LogisticaInversa ? 'true' : 'false'
+			];
 
 		$ch = curl_init();
 		
 		$curl_opt_arr = $this->getCurlOptsArr();
-		// $curl_opt_arr[CURLOPT_POST] 		= true;
 		$curl_opt_arr[CURLOPT_POSTFIELDS] 	= http_build_query($_query_string);
 		$curl_opt_arr[CURLOPT_URL] 			= "{$this->webservice_url}/oep_tracking/Oep_Track.asmx/GetPDFDeEtiquetasPorOrdenOrNumeroEnvio";
 

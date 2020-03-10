@@ -25,7 +25,7 @@ Como dependencia en tu proyecto a través de composer.json
 use diegonella\OcaEnvios\Oca;
 $oca 	= new Oca($cuit = '20-12345678-7', $operativa = 12345);
 $price 	= $oca->tarifarEnvioCorporativo(1, 1, 1640, 1006, 1, 0);
-$envios = $oca->listEnvios($fechaDesde = '08-08-2015', $fechaHasta = '13-08-2015');
+$envios = $oca->listEnvios($fechaDesde = '01-01-2020', $fechaHasta = '01-02-2020');
 
 print_r ($envios);
 print_r ($price);
