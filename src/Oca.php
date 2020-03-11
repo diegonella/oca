@@ -1,6 +1,6 @@
 <?php
 
-namespace diegonella\OcaEnvios;
+namespace diegonella\OCA;
 
 class Oca
 {
@@ -91,7 +91,7 @@ class Oca
 	 */
 	public function setUserAgent()
 	{
-		return 'OCA-ENVIOS ' . self::VERSION . ' - github.com/diegonella/oca-envios';
+		return 'OCA-PACK ' . self::VERSION . ' - github.com/diegonella/oca-envios';
 	}
 
 	// =========================================================================

@@ -1,5 +1,5 @@
 <?php 
-namespace diegonella\OcaEnvios;
+namespace diegonella\OCA;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -14,7 +14,7 @@ class OcaEnviosServiceProvider extends ServiceProvider
     
     public function register()
     {
-        $this->app->make('diegonella\OcaEnvios\OCA');
+        $this->app->make('diegonella\OCA\Oca');
     }
 
 } 

@@ -1,5 +1,5 @@
 {
-    "name": "diegonella/ocaenvios",
+    "name": "diegonella/OCA",
     "description": "Port para utilizar los metodos de tarifar con OCA",
     "license": "MIT",
     "authors": [
@@ -14,7 +14,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "diegonella\\ocaenvios\\OcaEnviosServiceProvider"
+                "diegonella\\OCA\\OcaEnviosServiceProvider"
             ]
         }
     }

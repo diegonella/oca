@@ -3,7 +3,7 @@ Laravel OCA Express Pak.
 ### Con Composer
 Desde línea de comandos
 ```
-composer require diegonella/oca-envios:dev-master
+composer require diegonella/oca
 ```
 
 Como dependencia en tu proyecto a través de composer.json
@@ -11,7 +11,7 @@ Como dependencia en tu proyecto a través de composer.json
 ```json
 {
     "require": {
-        "diegonella/oca-envios": "dev-master"
+        "diegonella/oca": "^1.0"
     }
 }
 ```
@@ -22,7 +22,7 @@ Como dependencia en tu proyecto a través de composer.json
 ### autorizados por OCA para operar (at. al cliente 0800-999-7700). 
 ### Otros métodos no requieren esta autorización
 
-use diegonella\OcaEnvios\Oca;
+use diegonella\OCA\Oca;
 $oca 	= new Oca($cuit = '20-12345678-7', $operativa = 12345);
 $price 	= $oca->tarifarEnvioCorporativo(1, 1, 1640, 1006, 1, 0);
 $envios = $oca->listEnvios($fechaDesde = '01-01-2020', $fechaHasta = '01-02-2020');
