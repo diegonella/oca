@@ -3,7 +3,7 @@ Laravel OCA Express Pak.
 ### Con Composer
 Desde línea de comandos
 ```
-composer require diegonella/oca-envios
+composer require diegonella/ocaenvios
 ```
 
 Como dependencia en tu proyecto a través de composer.json
