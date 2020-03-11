@@ -11,7 +11,7 @@ Como dependencia en tu proyecto a través de composer.json
 ```json
 {
     "require": {
-        "diegonella/oca-envios": "dev-master"
+        "diegonella/ocaenvios": "master"
     }
 }
 ```
