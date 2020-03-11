@@ -1,6 +1,6 @@
 <?php
 
-namespace diegonella\OCA;
+namespace diegonella\oca;
 
 class Oca
 {
