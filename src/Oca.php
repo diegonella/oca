@@ -28,10 +28,11 @@ class Oca
 	 * @param string $cuit: CUIT del cliente [con guiones]
 	 * @param integer $operativa nro de operativa
 	 */
-	public function __construct($cuit = '', $operativa = '')
+	public function __construct($cuit = '', $operativa = '', $operativas = [])
 	{
 		$this->Cuit 		= trim($cuit);
 		$this->Operativa 	= trim($operativa);
+		$this->Operativas 	= $operativas;
 
 		$this->setCurlOptArr( [	
 									CURLOPT_RETURNTRANSFER	=> TRUE,
@@ -72,6 +73,16 @@ class Oca
 		$this->Operativa = $operativa;
 	}
 
+	public function getOperativas()
+	{
+		return $this->Operativas;
+	}
+
+	public function setOperativas($operativas)
+	{
+		$this->Operativas = $operativas;
+	}
+
 	public function getCuit($cuit)
 	{
 		return $this->Cuit;
@@ -107,7 +118,26 @@ class Oca
 	 * @param integer $ValorDeclarado
 	 * @return array $e_corp conteniendo el tipo de tarifador y el precio del envío.
 	 */
-	public function tarifarEnvioCorporativo($PesoTotal, $VolumenTotal, $CodigoPostalOrigen, $CodigoPostalDestino, $CantidadPaquetes, $ValorDeclarado)
+
+	public function tarifarEnvios($PesoTotal, $VolumenTotal, $CodigoPostalOrigen, $CodigoPostalDestino, $CantidadPaquetes, $ValorDeclarado)
+	{
+		$e_corp = [];
+		foreach ($this->Operativas as $key => $op) {
+			$this->Operativa = $op['id'];
+
+			$shipping_method = $op['name'];
+
+			$results = $this->tarifarEnvioCorporativo($PesoTotal, $VolumenTotal, $CodigoPostalOrigen, $CodigoPostalDestino, $CantidadPaquetes, $ValorDeclarado, $shipping_method);
+
+			foreach ($results as $value) {
+				$e_corp[] = $value;
+			}
+		}
+
+		return $e_corp;
+	}
+
+	public function tarifarEnvioCorporativo($PesoTotal, $VolumenTotal, $CodigoPostalOrigen, $CodigoPostalDestino, $CantidadPaquetes, $ValorDeclarado, $shipping_method = 'Default')
 	{
 		$_query_string = [	
                             'PesoTotal'				=> $PesoTotal,
@@ -147,6 +177,7 @@ class Oca
 							'PlazoEntrega'	=> $envio_corporativo->getElementsByTagName('PlazoEntrega')->item(0)->nodeValue,
 							'Adicional'		=> $envio_corporativo->getElementsByTagName('Adicional')->item(0)->nodeValue,
 							'Total'			=> $envio_corporativo->getElementsByTagName('Total')->item(0)->nodeValue,
+							'MetodoEnvio' => $shipping_method
                         ];
 		}
 		
